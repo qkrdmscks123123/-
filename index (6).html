@@ -1,0 +1,649 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>체육대회 일정표</title>
+
+<!-- Firebase SDK (읽기 전용 실시간 리스너용) -->
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+  import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+
+  const firebaseConfig = {
+    apiKey:            "AIzaSyAVSLJrQDD2fxlc2kkaVlGhVaxCpsltUz0",
+    authDomain:        "semyung-spor.firebaseapp.com",
+    databaseURL:       "https://semyung-spor-default-rtdb.asia-southeast1.firebasedatabase.app",
+    projectId:         "semyung-spor",
+    storageBucket:     "semyung-spor.firebasestorage.app",
+    messagingSenderId: "266780919685",
+    appId:             "1:266780919685:web:f40b3e20b3a8ab30e726ec"
+  };
+
+  try {
+    const app = initializeApp(firebaseConfig);
+    const db  = getDatabase(app);
+
+    onValue(ref(db, "notices"), snap => {
+      const list = [];
+      snap.forEach(c => list.push({ id: c.key, ...c.val() }));
+      list.sort((a, b) => b.time.localeCompare(a.time));
+      window._notices = list;
+      if (window.renderNotices) window.renderNotices();
+    });
+
+    onValue(ref(db, "events"), snap => {
+      const list = [];
+      snap.forEach(c => list.push({ id: c.key, ...c.val() }));
+      list.sort((a, b) => a.time.localeCompare(b.time));
+      window._events = list;
+      if (window.renderSportFilter) window.renderSportFilter();
+      if (window.renderTimeline)    window.renderTimeline();
+    });
+
+    window._fbReady = true;
+    document.getElementById("liveLabel").textContent = "실시간 연결됨";
+  } catch(e) {
+    console.warn("Firebase 연결 실패 — 데모 모드:", e);
+    window._fbReady = false;
+    window.dispatchEvent(new Event("fbFail"));
+  }
+</script>
+
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{font-size:16px}
+body{font-family:'Apple SD Gothic Neo','Noto Sans KR',sans-serif;background:#f5f4f0;color:#2c2c2a;min-height:100vh}
+
+:root{
+  --g:#1D9E75;--gd:#0F6E56;--gl:#E1F5EE;
+  --a:#BA7517;--al:#FAEEDA;
+  --r:#E24B4A;--rl:#FCEBEB;
+  --b:#378ADD;--bl:#E6F1FB;
+  --bg:#F1EFE8;--gm:#888780;--gk:#444441;
+  --br:rgba(136,135,128,.18);--brm:rgba(136,135,128,.30);
+  --rsm:8px;--rmd:12px;--rlg:16px;
+  --sh:0 1px 4px rgba(0,0,0,.07);
+}
+
+.wrap{max-width:900px;margin:0 auto;padding:1.25rem 1rem 3rem}
+
+.hd{background:var(--g);color:#fff;border-radius:var(--rlg);padding:1.25rem 1.5rem;margin-bottom:1.25rem;display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:10px}
+.hd h1{font-size:1.25rem;font-weight:600}
+.hd .sub{font-size:.8rem;opacity:.8;margin-top:3px}
+.live{display:flex;align-items:center;gap:6px;background:rgba(255,255,255,.18);border:1px solid rgba(255,255,255,.35);border-radius:99px;padding:4px 12px;font-size:.75rem;white-space:nowrap}
+.dot{width:7px;height:7px;border-radius:50%;background:#FAC775;animation:blink 1.4s infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.25}}
+
+.abar{display:flex;justify-content:space-between;align-items:center;margin-bottom:.75rem}
+.abar .clk{font-size:.75rem;color:var(--gm)}
+.bsm{font-size:.75rem;padding:5px 13px;border:1px solid var(--brm);border-radius:99px;background:#fff;color:var(--gk);cursor:pointer}
+.bsm:hover{background:var(--bg)}
+.logged .bsm{background:var(--gl);color:var(--gd);border-color:var(--g);font-weight:600}
+
+.stitle{font-size:.7rem;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--gm);margin-bottom:.5rem}
+
+.nlist{display:flex;flex-direction:column;gap:6px;margin-bottom:1.25rem;max-height:260px;overflow-y:auto;padding-right:2px}
+.nlist::-webkit-scrollbar{width:4px}
+.nlist::-webkit-scrollbar-thumb{background:var(--brm);border-radius:99px}
+.ni{background:#fff;border:0.5px solid var(--br);border-radius:var(--rsm);padding:10px 14px;display:flex;align-items:flex-start;gap:10px;box-shadow:var(--sh);flex-shrink:0}
+.ni.urgent{border-left:3px solid var(--r)}
+.ni.info{border-left:3px solid var(--b)}
+.nbadge{font-size:.68rem;font-weight:600;padding:2px 8px;border-radius:99px;white-space:nowrap;flex-shrink:0}
+.bu{background:var(--rl);color:var(--r)}
+.bi{background:var(--bl);color:var(--b)}
+.ntxt{font-size:.82rem;line-height:1.55;flex:1}
+.nmeta{display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex-shrink:0}
+.ntime{font-size:.7rem;color:var(--gm)}
+.delbtn{font-size:.7rem;color:var(--gm);background:none;border:none;cursor:pointer;padding:0}
+.delbtn:hover{color:var(--r)}
+.nonoti{font-size:.82rem;color:var(--gm);padding:8px 0}
+
+.fcard{background:#fff;border:0.5px solid var(--br);border-radius:var(--rmd);padding:1rem 1.25rem;margin-bottom:1.25rem;display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end;box-shadow:var(--sh)}
+.fg{display:flex;flex-direction:column;gap:4px}
+.fg label{font-size:.72rem;color:var(--gm)}
+.fg select{font-size:.82rem;padding:6px 10px;border:0.5px solid var(--brm);border-radius:var(--rsm);background:var(--bg);color:var(--gk);cursor:pointer}
+.breset{font-size:.8rem;padding:7px 14px;border:0.5px solid var(--brm);border-radius:var(--rsm);background:transparent;color:var(--gm);cursor:pointer;margin-top:auto}
+.breset:hover{background:var(--bg)}
+
+.ctabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:1rem}
+.ctab{padding:5px 13px;font-size:.8rem;border-radius:99px;border:0.5px solid var(--brm);background:transparent;color:var(--gk);cursor:pointer}
+.ctab.on{background:var(--g);color:#fff;border-color:var(--g)}
+.ctab:hover:not(.on){background:var(--bg)}
+
+.tl{display:flex;flex-direction:column;width:100%}
+.tb{display:flex;align-items:stretch;width:100%}
+.tcol{width:68px;flex-shrink:0;display:flex;flex-direction:column;align-items:center;padding-top:15px}
+.tlabel{font-size:.75rem;font-weight:600;color:var(--gm);white-space:nowrap}
+.tline{width:1px;background:var(--brm);flex:1;min-height:12px;margin-top:5px}
+.ecol{flex:1;min-width:0;padding:0 0 16px 10px;display:flex;flex-direction:column;gap:8px}
+
+.ec{background:#fff;border:0.5px solid var(--br);border-radius:var(--rmd);padding:12px 14px;box-shadow:var(--sh)}
+.ec.cur{border-color:var(--g);border-width:1.5px;background:var(--gl)}
+.ec.don{opacity:.5}
+.etop{display:flex;align-items:center;gap:8px;margin-bottom:7px;flex-wrap:wrap}
+.ename{font-size:.95rem;font-weight:600}
+.sbadge{font-size:.68rem;font-weight:600;padding:2px 9px;border-radius:99px}
+.sc{background:var(--g);color:#fff}
+.su{background:var(--al);color:var(--a)}
+.sd{background:var(--bg);color:var(--gm)}
+.emeta{display:flex;gap:14px;flex-wrap:wrap}
+.emi{font-size:.76rem;color:var(--gm)}
+.tags{display:flex;gap:5px;flex-wrap:wrap;margin-top:8px}
+.tag{font-size:.68rem;padding:2px 8px;border-radius:99px;background:var(--bl);color:var(--b)}
+.tag.hl{background:var(--g);color:#fff}
+.empty{text-align:center;padding:3.5rem 1rem;font-size:.85rem;color:var(--gm)}
+
+.ov{position:fixed;inset:0;background:rgba(0,0,0,.4);display:none;align-items:center;justify-content:center;z-index:200;padding:1rem}
+.ov.open{display:flex}
+.mbox{background:#fff;border-radius:var(--rlg);padding:1.5rem;width:100%;max-width:460px;box-shadow:0 8px 32px rgba(0,0,0,.15);animation:pop .18s ease}
+@keyframes pop{from{opacity:0;transform:scale(.95)}to{opacity:1;transform:scale(1)}}
+.mbox h2{font-size:1rem;font-weight:600;margin-bottom:1.1rem}
+.mmb{display:block;width:100%;text-align:left;padding:10px 14px;border-radius:var(--rsm);border:0.5px solid var(--brm);background:#fff;font-size:.85rem;cursor:pointer;margin-bottom:8px;font-family:inherit}
+.mmb:hover{background:var(--bg)}
+.mg{background:var(--gl);color:var(--gd);border-color:var(--g)}
+.mb2{background:var(--bl);color:var(--b);border-color:var(--b)}
+.ma{background:var(--al);color:var(--a);border-color:var(--a)}
+.mr{background:var(--rl);color:var(--r);border-color:var(--r)}
+.fr{margin-bottom:11px}
+.fr label{display:block;font-size:.72rem;color:var(--gm);margin-bottom:4px}
+.fr input,.fr select,.fr textarea{width:100%;font-size:.82rem;padding:7px 10px;border:0.5px solid var(--brm);border-radius:var(--rsm);background:var(--bg);color:var(--gk);font-family:inherit}
+.fr input:focus,.fr select:focus,.fr textarea:focus{outline:2px solid var(--g);background:#fff}
+.fr textarea{height:76px;resize:vertical}
+.fgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.mac{display:flex;gap:8px;justify-content:flex-end;margin-top:1.1rem}
+.bp{background:var(--g);color:#fff;border:none;border-radius:var(--rsm);padding:8px 20px;font-size:.82rem;font-weight:600;cursor:pointer;font-family:inherit}
+.bp:hover{background:var(--gd)}
+.bc{background:transparent;color:var(--gm);border:0.5px solid var(--brm);border-radius:var(--rsm);padding:8px 14px;font-size:.82rem;cursor:pointer;font-family:inherit}
+.bd{background:var(--rl);color:var(--r);border:0.5px solid var(--r);border-radius:var(--rsm);padding:8px 14px;font-size:.82rem;cursor:pointer;font-family:inherit}
+
+.abox{background:#fff;border-radius:var(--rlg);padding:2rem 1.75rem;width:100%;max-width:340px;box-shadow:0 12px 40px rgba(0,0,0,.18);animation:pop .18s ease;text-align:center}
+.aicon{font-size:2rem;margin-bottom:.5rem}
+.abox h2{font-size:1.05rem;font-weight:600;margin-bottom:.3rem}
+.abox p{font-size:.78rem;color:var(--gm);margin-bottom:1.25rem;line-height:1.5}
+.aiwrap{position:relative;margin-bottom:.75rem}
+.aiwrap input{width:100%;padding:10px 40px 10px 14px;font-size:.9rem;letter-spacing:.1em;border:1px solid var(--brm);border-radius:var(--rsm);background:var(--bg);color:var(--gk);text-align:center;font-family:inherit}
+.aiwrap input:focus{outline:2px solid var(--g);background:#fff}
+.aiwrap input.err{border-color:var(--r);background:var(--rl)}
+.eye{position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;font-size:.85rem;color:var(--gm)}
+.aerr{font-size:.75rem;color:var(--r);margin-bottom:.75rem;min-height:1rem}
+.alocked{font-weight:600}
+.bauth{width:100%;background:var(--g);color:#fff;border:none;border-radius:var(--rsm);padding:10px;font-size:.9rem;font-weight:600;cursor:pointer;margin-bottom:.5rem;font-family:inherit}
+.bauth:hover:not(:disabled){background:var(--gd)}
+.bauth:disabled{opacity:.45;cursor:not-allowed}
+.bauthc{font-size:.78rem;color:var(--gm);background:none;border:none;cursor:pointer;font-family:inherit}
+
+.toast{position:fixed;bottom:1.5rem;left:50%;transform:translateX(-50%);background:var(--gk);color:#fff;padding:9px 20px;border-radius:99px;font-size:.8rem;opacity:0;transition:opacity .2s;pointer-events:none;white-space:nowrap;z-index:999}
+.toast.show{opacity:1}
+
+@media(max-width:480px){.hd h1{font-size:1.05rem}.tcol{width:54px}.fgrid{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="hd">
+    <div>
+      <h1>2025 체육대회 일정표</h1>
+      <p class="sub">세명고등학교 · 운동장 및 체육관</p>
+    </div>
+    <div class="live"><div class="dot"></div><span id="liveLabel">연결 중...</span></div>
+  </header>
+
+  <div class="abar" id="abar">
+    <span class="clk" id="clk"></span>
+    <button class="bsm" onclick="clickAdmin()">⚙ 관리자 모드</button>
+  </div>
+
+  <p class="stitle">📢 공지사항</p>
+  <div class="nlist" id="nlist"><p class="nonoti">불러오는 중...</p></div>
+
+  <div class="fcard">
+    <div class="fg"><label>학년</label>
+      <select id="gf" onchange="onGrade()">
+        <option value="">전체</option><option value="1">1학년</option>
+        <option value="2">2학년</option><option value="3">3학년</option>
+      </select>
+    </div>
+    <div class="fg"><label>반</label>
+      <select id="cf" onchange="renderTimeline()"><option value="">전체</option></select>
+    </div>
+    <div class="fg"><label>종목</label>
+      <select id="sf" onchange="renderTimeline()"><option value="">전체</option></select>
+    </div>
+    <button class="breset" onclick="resetF()">초기화</button>
+  </div>
+
+  <div class="ctabs" id="ctabs" style="display:none"></div>
+  <div class="tl" id="tl"><div class="empty">일정을 불러오는 중...</div></div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<!-- 인증 모달 -->
+<div class="ov" id="authOv">
+  <div class="abox">
+    <div class="aicon">🔐</div>
+    <h2>관리자 인증</h2>
+    <p>관리자만 접근할 수 있습니다.</p>
+    <div class="aiwrap">
+      <input type="password" id="pwinput" placeholder="비밀번호 입력"
+        onkeydown="if(event.key==='Enter')doLogin()"
+        oninput="document.getElementById('pwinput').classList.remove('err');document.getElementById('aerr').textContent=''"/>
+      <button class="eye" onclick="toggleEye()">👁</button>
+    </div>
+    <div class="aerr" id="aerr"></div>
+    <button class="bauth" id="lbtn" onclick="doLogin()">확인</button><br>
+    <button class="bauthc" onclick="closeAuth()">취소</button>
+  </div>
+</div>
+
+<!-- 관리자 모달 -->
+<div class="ov" id="adminOv" onclick="if(event.target===this)closeAdmin()">
+  <div class="mbox">
+    <h2 id="mtitle">관리자 메뉴</h2>
+
+    <div id="pMenu">
+      <button class="mmb mg" onclick="sp('pNotice')">📢 공지사항 추가</button>
+      <button class="mmb mb2" onclick="sp('pEvent')">📅 경기 일정 추가</button>
+      <button class="mmb ma" onclick="sp('pStatus')">🔄 경기 상태 변경</button>
+      <button class="mmb mr" onclick="sp('pDelete')">🗑 경기 삭제</button>
+      <button class="mmb" onclick="sp('pPwMgr')" style="color:var(--gm)">🔑 비밀번호 관리</button>
+      <div class="mac">
+        <button class="bd" onclick="doLogout()">로그아웃</button>
+        <button class="bc" onclick="closeAdmin()">닫기</button>
+      </div>
+    </div>
+
+    <div id="pNotice" style="display:none">
+      <div class="fr"><label>중요도</label>
+        <select id="ntype"><option value="urgent">긴급 (빨간색)</option><option value="info">일반 (파란색)</option></select>
+      </div>
+      <div class="fr"><label>공지 내용</label>
+        <textarea id="ntxt" placeholder="공지 내용을 입력하세요..."></textarea>
+      </div>
+      <div class="mac"><button class="bc" onclick="sp('pMenu')">뒤로</button><button class="bp" onclick="addNotice()">등록</button></div>
+    </div>
+
+    <div id="pEvent" style="display:none">
+      <div class="fgrid">
+        <div class="fr"><label>시작 시간</label><input id="etime" type="time" value="09:00"/></div>
+        <div class="fr"><label>소요 시간 (분)</label><input id="edur" type="number" value="40" min="10" max="180"/></div>
+        <div class="fr"><label>종목</label><input id="esport" placeholder="예: 축구"/></div>
+        <div class="fr"><label>장소</label><input id="eplace" placeholder="예: 운동장 A"/></div>
+      </div>
+      <div class="fr"><label>참가 반 (쉼표 구분, 예: 1-1, 2-3)</label>
+        <input id="eclasses" placeholder="1-1, 1-2, 2-3"/>
+      </div>
+      <div class="mac"><button class="bc" onclick="sp('pMenu')">뒤로</button><button class="bp" onclick="addEvent()">추가</button></div>
+    </div>
+
+    <div id="pStatus" style="display:none">
+      <div class="fr"><label>경기 선택</label><select id="seid"></select></div>
+      <div class="fr"><label>변경할 상태</label>
+        <select id="sstatus">
+          <option value="upcoming">예정</option>
+          <option value="current">진행중</option>
+          <option value="done">완료</option>
+        </select>
+      </div>
+      <div class="mac"><button class="bc" onclick="sp('pMenu')">뒤로</button><button class="bp" onclick="changeStatus()">변경</button></div>
+    </div>
+
+    <div id="pDelete" style="display:none">
+      <div class="fr"><label>삭제할 경기</label><select id="deid"></select></div>
+      <div class="mac"><button class="bc" onclick="sp('pMenu')">뒤로</button><button class="bd" onclick="deleteEvent()">삭제</button></div>
+    </div>
+
+    <div id="pPwMgr" style="display:none">
+      <p style="font-size:.78rem;color:var(--gm);margin-bottom:.75rem">등록된 비밀번호 중 하나라도 맞으면 로그인됩니다.</p>
+      <div id="pwlist"></div>
+      <div style="display:flex;gap:6px">
+        <input id="newpw" type="password" placeholder="새 비밀번호 (4자 이상)"
+          style="flex:1;font-size:.82rem;padding:7px 10px;border:0.5px solid var(--brm);border-radius:var(--rsm);background:var(--bg);color:var(--gk);font-family:inherit"
+          onkeydown="if(event.key==='Enter')addPw()"/>
+        <button class="bp" onclick="addPw()">추가</button>
+      </div>
+      <div class="mac"><button class="bc" onclick="sp('pMenu')">뒤로</button></div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ── 설정 ── */
+const DB_URL = "https://semyung-spor-default-rtdb.asia-southeast1.firebasedatabase.app";
+
+/* ── 데모 데이터 ── */
+const DEMO_NOTICES = [
+  { id:"n1", type:"urgent", text:"13:00 이어달리기 출발 위치가 B트랙으로 변경되었습니다. 관련 반은 12:50까지 집합해 주세요.", time:"11:42" },
+  { id:"n2", type:"info",   text:"점심시간은 12:00~13:00입니다. 급식실 혼잡을 방지하기 위해 학년별로 나누어 입장합니다.", time:"09:15" },
+];
+const DEMO_EVENTS = [
+  { id:"e1", time:"09:00", sport:"이어달리기", place:"운동장 A트랙", dur:30, classes:["1-1","1-2","1-3","1-4"], status:"done" },
+  { id:"e2", time:"09:00", sport:"축구",       place:"운동장 B",     dur:40, classes:["2-1","2-2"],             status:"done" },
+  { id:"e3", time:"10:30", sport:"농구",       place:"체육관 2코트", dur:40, classes:["2-3","2-4"],             status:"current" },
+  { id:"e4", time:"10:30", sport:"피구",       place:"운동장 A구역", dur:40, classes:["1-3","1-4"],             status:"current" },
+  { id:"e5", time:"11:20", sport:"이어달리기", place:"운동장 A트랙", dur:30, classes:["2-1","2-2","2-3","2-4"], status:"upcoming" },
+  { id:"e6", time:"13:00", sport:"줄다리기",   place:"운동장 중앙",  dur:30, classes:["3-1","3-2","1-3","1-4"], status:"upcoming" },
+  { id:"e7", time:"14:00", sport:"배구",       place:"체육관 1코트", dur:40, classes:["1-1","1-2"],             status:"upcoming" },
+];
+const ALL_CLASSES = ["1-1","1-2","1-3","1-4","2-1","2-2","2-3","2-4","3-1","3-2","3-3","3-4"];
+
+/* ── 상태 ── */
+let notices = [], events = [], activeTab = "";
+let isAdmin = false, failCount = 0, lockUntil = 0;
+const MAX_FAIL = 5, PW_KEY = "sd_pws";
+
+window._notices = null;
+window._events  = null;
+
+/* ── 비밀번호 ── */
+function getPws() {
+  try { const r = sessionStorage.getItem(PW_KEY); if (r) return JSON.parse(r); } catch(e){}
+  return ["admin1234", "sports2025"];
+}
+function savePws(l) { sessionStorage.setItem(PW_KEY, JSON.stringify(l)); }
+
+/* ── Firebase 데이터 수신 ── */
+window.renderNotices     = renderNotices;
+window.renderSportFilter = renderSportFilter;
+window.renderTimeline    = renderTimeline;
+
+// Firebase 연결 실패 시 데모 모드
+window.addEventListener("fbFail", () => {
+  notices = [...DEMO_NOTICES];
+  events  = [...DEMO_EVENTS];
+  document.getElementById("liveLabel").textContent = "데모 모드";
+  renderNotices(); renderSportFilter(); renderTimeline();
+  showToast("Firebase 미연결 — 데모 데이터로 동작합니다.");
+});
+
+// Firebase 리스너가 먼저 도착했을 수 있으니 DOM 준비 후 1회 강제 동기화
+document.addEventListener("DOMContentLoaded", () => {
+  setTimeout(() => {
+    if (window._notices !== null) { notices = window._notices; renderNotices(); }
+    if (window._events  !== null) { events  = window._events;  renderSportFilter(); renderTimeline(); }
+    // 연결도 안 됐고 데이터도 없으면 데모
+    if (!window._fbReady && !notices.length) {
+      notices = [...DEMO_NOTICES]; events = [...DEMO_EVENTS];
+      document.getElementById("liveLabel").textContent = "데모 모드";
+      renderNotices(); renderSportFilter(); renderTimeline();
+    }
+  }, 1200);
+});
+
+/* ── REST 헬퍼 (쓰기 전용) ── */
+async function dbPost(path, data) {
+  const res = await fetch(`${DB_URL}/${path}.json`, {
+    method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify(data)
+  });
+  if (!res.ok) throw new Error(await res.text());
+  return res.json();
+}
+async function dbPut(path, data) {
+  const res = await fetch(`${DB_URL}/${path}.json`, {
+    method:"PUT", headers:{"Content-Type":"application/json"}, body:JSON.stringify(data)
+  });
+  if (!res.ok) throw new Error(await res.text());
+}
+async function dbDel(path) {
+  const res = await fetch(`${DB_URL}/${path}.json`, { method:"DELETE" });
+  if (!res.ok) throw new Error(await res.text());
+}
+
+/* ── 렌더: 공지 ── */
+function renderNotices() {
+  if (window._notices !== null) notices = window._notices;
+  const el = document.getElementById("nlist");
+  if (!notices.length) { el.innerHTML = '<p class="nonoti">공지사항이 없습니다.</p>'; return; }
+  let h = "";
+  for (const n of notices) {
+    const lbl = n.type==="urgent"?"긴급":"공지";
+    const bc  = n.type==="urgent"?"bu":"bi";
+    const del = isAdmin ? `<button class="delbtn" onclick="deleteNotice('${n.id}')">✕</button>` : "";
+    h += `<div class="ni ${n.type}"><span class="nbadge ${bc}">${lbl}</span><span class="ntxt">${esc(n.text)}</span><span class="nmeta"><span class="ntime">${n.time}</span>${del}</span></div>`;
+  }
+  el.innerHTML = h;
+}
+
+/* ── 렌더: 종목 필터 ── */
+function renderSportFilter() {
+  if (window._events !== null) events = window._events;
+  const sports = [...new Set(events.map(e=>e.sport))].sort();
+  const sel = document.getElementById("sf"), cur = sel.value;
+  sel.innerHTML = '<option value="">전체</option>' + sports.map(s=>`<option value="${s}"${s===cur?" selected":""}>${s}</option>`).join("");
+}
+
+/* ── 렌더: 타임라인 ── */
+function getFiltered() {
+  if (window._events !== null) events = window._events;
+  const grade = document.getElementById("gf").value;
+  const cls   = activeTab || document.getElementById("cf").value;
+  const sport = document.getElementById("sf").value;
+  return events.filter(e => {
+    if (sport && e.sport !== sport) return false;
+    if (cls)   return e.classes.includes(cls);
+    if (grade) return e.classes.some(c => c.startsWith(grade+"-"));
+    return true;
+  });
+}
+function renderTimeline() {
+  const myClass = activeTab || document.getElementById("cf").value;
+  const filtered = getFiltered();
+  const tl = document.getElementById("tl");
+  if (!filtered.length) { tl.innerHTML = '<div class="empty">해당하는 경기 일정이 없습니다.</div>'; return; }
+  const grouped = {};
+  for (const e of filtered) (grouped[e.time] = grouped[e.time]||[]).push(e);
+  const times = Object.keys(grouped).sort();
+  let h = "";
+  for (const t of times) {
+    let cards = "";
+    for (const e of grouped[t]) {
+      const lbl  = {current:"진행중",upcoming:"예정",done:"완료"}[e.status]||"예정";
+      const sc   = {current:"sc",upcoming:"su",done:"sd"}[e.status]||"su";
+      const ecls = {current:"cur",upcoming:"",done:"don"}[e.status]||"";
+      const tags = e.classes.map(c=>`<span class="tag${myClass&&c===myClass?" hl":""}">${esc(c)}</span>`).join("");
+      cards += `<div class="ec ${ecls}"><div class="etop"><span class="ename">${esc(e.sport)}</span><span class="sbadge ${sc}">${lbl}</span></div><div class="emeta"><span class="emi">📍 ${esc(e.place)}</span><span class="emi">⏱ ${e.dur}분</span></div><div class="tags">${tags}</div></div>`;
+    }
+    h += `<div class="tb"><div class="tcol"><span class="tlabel">${t}</span><div class="tline"></div></div><div class="ecol">${cards}</div></div>`;
+  }
+  tl.innerHTML = h;
+}
+
+/* ── 필터 ── */
+function onGrade() {
+  const grade = document.getElementById("gf").value;
+  activeTab = "";
+  const cf = document.getElementById("cf");
+  const fc = grade ? ALL_CLASSES.filter(c=>c.startsWith(grade+"-")) : ALL_CLASSES;
+  cf.innerHTML = '<option value="">전체</option>' + fc.map(c=>`<option value="${c}">${c}반</option>`).join("");
+  const tabs = document.getElementById("ctabs");
+  if (grade) {
+    tabs.style.display = "flex";
+    tabs.innerHTML = `<button class="ctab on" onclick="setTab('')">전체</button>` +
+      fc.map(c=>`<button class="ctab" id="t-${c}" onclick="setTab('${c}')">${c}반</button>`).join("");
+  } else { tabs.style.display="none"; tabs.innerHTML=""; }
+  renderTimeline();
+}
+function setTab(cls) {
+  activeTab = cls;
+  document.querySelectorAll(".ctab").forEach(el=>el.classList.remove("on"));
+  const t = cls ? document.getElementById("t-"+cls) : document.querySelector(".ctab");
+  if (t) t.classList.add("on");
+  document.getElementById("cf").value = cls;
+  renderTimeline();
+}
+function resetF() {
+  ["gf","cf","sf"].forEach(id=>document.getElementById(id).value="");
+  activeTab = "";
+  document.getElementById("ctabs").style.display="none";
+  document.getElementById("ctabs").innerHTML="";
+  renderTimeline();
+}
+
+/* ── 인증 ── */
+function clickAdmin() { if (isAdmin) openAdmin(); else openAuth(); }
+function openAuth() {
+  document.getElementById("pwinput").value="";
+  document.getElementById("aerr").textContent="";
+  document.getElementById("pwinput").classList.remove("err");
+  document.getElementById("authOv").classList.add("open");
+  checkLock();
+  setTimeout(()=>document.getElementById("pwinput").focus(),80);
+}
+function closeAuth() { document.getElementById("authOv").classList.remove("open"); }
+function toggleEye() { const i=document.getElementById("pwinput"); i.type=i.type==="password"?"text":"password"; }
+function checkLock() {
+  const now=Date.now(), btn=document.getElementById("lbtn"), err=document.getElementById("aerr");
+  if (lockUntil>now) {
+    err.innerHTML=`<span class="alocked">⛔ ${Math.ceil((lockUntil-now)/1000)}초 후 다시 시도하세요.</span>`;
+    btn.disabled=true; setTimeout(checkLock,1000);
+  } else { btn.disabled=false; }
+}
+function doLogin() {
+  if (Date.now()<lockUntil) return;
+  const pw = document.getElementById("pwinput").value;
+  if (getPws().includes(pw)) {
+    isAdmin=true; failCount=0;
+    closeAuth();
+    document.getElementById("abar").classList.add("logged");
+    document.querySelector(".bsm").textContent="⚙ 관리자 (로그인됨)";
+    renderNotices();
+    openAdmin();
+    showToast("관리자로 로그인되었습니다.");
+  } else {
+    failCount++;
+    document.getElementById("pwinput").classList.add("err");
+    document.getElementById("pwinput").value="";
+    if (failCount>=MAX_FAIL) {
+      lockUntil=Date.now()+30000;
+      document.getElementById("aerr").innerHTML=`<span class="alocked">⛔ ${MAX_FAIL}회 실패 — 30초 잠금</span>`;
+      document.getElementById("lbtn").disabled=true;
+      setTimeout(checkLock,1000);
+    } else {
+      document.getElementById("aerr").textContent=`비밀번호 틀림 (${MAX_FAIL-failCount}회 남음)`;
+      setTimeout(()=>document.getElementById("pwinput").focus(),50);
+    }
+  }
+}
+function doLogout() {
+  isAdmin=false; closeAdmin();
+  document.getElementById("abar").classList.remove("logged");
+  document.querySelector(".bsm").textContent="⚙ 관리자 모드";
+  renderNotices();
+  showToast("로그아웃 되었습니다.");
+}
+
+/* ── 관리자 모달 ── */
+function openAdmin() { sp("pMenu"); fillSel(); document.getElementById("adminOv").classList.add("open"); }
+function closeAdmin() { document.getElementById("adminOv").classList.remove("open"); }
+function sp(id) {
+  ["pMenu","pNotice","pEvent","pStatus","pDelete","pPwMgr"].forEach(p=>document.getElementById(p).style.display=p===id?"":"none");
+  const T={pMenu:"관리자 메뉴",pNotice:"공지사항 추가",pEvent:"경기 일정 추가",pStatus:"경기 상태 변경",pDelete:"경기 삭제",pPwMgr:"비밀번호 관리"};
+  document.getElementById("mtitle").textContent=T[id]||"";
+  if (id==="pPwMgr") renderPwList();
+}
+function fillSel() {
+  const opts = events.map(e=>`<option value="${e.id}">${e.time} ${esc(e.sport)} (${e.classes.join(", ")})</option>`).join("");
+  document.getElementById("seid").innerHTML = opts;
+  document.getElementById("deid").innerHTML = opts;
+}
+
+/* ── 공지 추가/삭제 ── */
+function addNotice() {
+  const type=document.getElementById("ntype").value;
+  const text=document.getElementById("ntxt").value.trim();
+  if (!text) { showToast("내용을 입력해 주세요."); return; }
+  const now=new Date(), time=pad(now.getHours())+":"+pad(now.getMinutes());
+  const data={type,text,time};
+  if (window._fbReady) {
+    dbPost("notices",data).then(()=>showToast("공지사항이 등록되었습니다.")).catch(()=>showToast("❌ 등록 실패"));
+  } else { notices.unshift({id:"l"+Date.now(),...data}); renderNotices(); showToast("등록되었습니다."); }
+  document.getElementById("ntxt").value="";
+  closeAdmin();
+}
+function deleteNotice(id) {
+  if (!isAdmin||!confirm("이 공지사항을 삭제하시겠습니까?")) return;
+  if (window._fbReady) {
+    dbDel(`notices/${id}`).then(()=>showToast("삭제되었습니다.")).catch(()=>showToast("❌ 삭제 실패"));
+  } else { notices=notices.filter(n=>n.id!==id); renderNotices(); showToast("삭제되었습니다."); }
+}
+
+/* ── 경기 추가 ── */
+function addEvent() {
+  const time=document.getElementById("etime").value;
+  const sport=document.getElementById("esport").value.trim();
+  const place=document.getElementById("eplace").value.trim();
+  const dur=parseInt(document.getElementById("edur").value)||40;
+  const classes=document.getElementById("eclasses").value.split(",").map(c=>c.trim()).filter(Boolean);
+  if (!time||!sport||!classes.length) { showToast("시간, 종목, 참가 반을 모두 입력해 주세요."); return; }
+  const data={time,sport,place,dur,classes,status:"upcoming"};
+  if (window._fbReady) {
+    dbPost("events",data).then(()=>showToast("경기가 추가되었습니다.")).catch(()=>showToast("❌ 추가 실패"));
+  } else { events.push({id:"l"+Date.now(),...data}); events.sort((a,b)=>a.time.localeCompare(b.time)); renderSportFilter(); renderTimeline(); showToast("추가되었습니다."); }
+  ["esport","eplace","eclasses"].forEach(id=>document.getElementById(id).value="");
+  closeAdmin();
+}
+
+/* ── 상태 변경 ── */
+function changeStatus() {
+  const id=document.getElementById("seid").value;
+  const status=document.getElementById("sstatus").value;
+  if (!id) { showToast("경기를 선택해 주세요."); return; }
+  if (window._fbReady) {
+    const ev=events.find(e=>e.id===id);
+    if (!ev) { showToast("경기를 찾을 수 없습니다."); return; }
+    const {id:_,...rest}=ev;
+    dbPut(`events/${id}`,{...rest,status}).then(()=>showToast("상태가 변경되었습니다.")).catch(()=>showToast("❌ 변경 실패"));
+  } else { const ev=events.find(e=>e.id===id); if(ev){ev.status=status;renderTimeline();} showToast("변경되었습니다."); }
+  closeAdmin();
+}
+
+/* ── 경기 삭제 ── */
+function deleteEvent() {
+  const id=document.getElementById("deid").value;
+  if (!id||!confirm("이 경기를 삭제하시겠습니까?")) return;
+  if (window._fbReady) {
+    dbDel(`events/${id}`).then(()=>showToast("경기가 삭제되었습니다.")).catch(()=>showToast("❌ 삭제 실패"));
+  } else { events=events.filter(e=>e.id!==id); renderSportFilter(); renderTimeline(); showToast("삭제되었습니다."); }
+  closeAdmin();
+}
+
+/* ── 비밀번호 관리 ── */
+function renderPwList() {
+  const list=getPws(), el=document.getElementById("pwlist");
+  el.innerHTML=list.map((pw,i)=>
+    `<div style="display:flex;align-items:center;gap:8px;padding:6px 10px;background:var(--bg);border-radius:var(--rsm);margin-bottom:6px">
+      <span style="flex:1;font-size:.82rem;font-family:monospace">${"●".repeat(pw.length)} <small style="color:var(--gm)">(${pw.length}자)</small></span>
+      <button onclick="removePw(${i})" style="font-size:.72rem;color:var(--r);background:none;border:none;cursor:pointer">삭제</button>
+    </div>`
+  ).join("");
+}
+function addPw() {
+  const v=document.getElementById("newpw").value.trim();
+  if (v.length<4) { showToast("4자 이상 입력하세요."); return; }
+  const list=getPws();
+  if (list.includes(v)) { showToast("이미 등록된 비밀번호입니다."); return; }
+  list.push(v); savePws(list); document.getElementById("newpw").value=""; renderPwList(); showToast("추가되었습니다.");
+}
+function removePw(i) {
+  const list=getPws();
+  if (list.length<=1) { showToast("최소 1개는 유지해야 합니다."); return; }
+  list.splice(i,1); savePws(list); renderPwList(); showToast("삭제되었습니다.");
+}
+
+/* ── 유틸 ── */
+function esc(s) { return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;"); }
+function pad(n) { return String(n).padStart(2,"0"); }
+let _tt;
+function showToast(msg) {
+  const t=document.getElementById("toast"); t.textContent=msg; t.classList.add("show");
+  clearTimeout(_tt); _tt=setTimeout(()=>t.classList.remove("show"),2600);
+}
+function updateClock() {
+  const n=new Date();
+  document.getElementById("clk").textContent=`현재 시각: ${pad(n.getHours())}:${pad(n.getMinutes())}`;
+}
+updateClock(); setInterval(updateClock,30000);
+</script>
+</body>
+</html>
