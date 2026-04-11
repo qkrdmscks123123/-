@@ -1,0 +1,714 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>체육대회 일정표</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{min-height:100%}
+body{font-family:'Apple SD Gothic Neo','Noto Sans KR',sans-serif;background:#f0efe9;color:#1e1e1c;line-height:1.5}
+
+:root{
+  --g:#1D9E75;--gd:#0F6E56;--gl:#E1F5EE;
+  --a:#BA7517;--al:#FAEEDA;
+  --r:#E24B4A;--rl:#FCEBEB;
+  --b:#378ADD;--bl:#E6F1FB;
+  --gr:#F1EFE8;--gm:#888780;--gk:#444441;
+  --bd:rgba(100,100,90,.14);--bd2:rgba(100,100,90,.26);
+  --r8:8px;--r12:12px;--r16:16px;
+  --sh:0 1px 3px rgba(0,0,0,.06);
+}
+
+.page{max-width:860px;margin:0 auto;padding:1.25rem 1rem 4rem}
+
+/* 헤더 */
+.hd{background:var(--g);color:#fff;border-radius:var(--r16);padding:1.25rem 1.5rem;margin-bottom:1.25rem;display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:10px}
+.hd h1{font-size:1.2rem;font-weight:700}
+.hd .sub{font-size:.78rem;opacity:.8;margin-top:2px}
+.live-pill{display:flex;align-items:center;gap:6px;background:rgba(255,255,255,.18);border:1px solid rgba(255,255,255,.35);border-radius:99px;padding:4px 12px;font-size:.73rem;white-space:nowrap}
+.dot{width:7px;height:7px;border-radius:50%;background:#fac775;animation:pulse 1.4s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.2}}
+
+/* 관리자 바 */
+.abar{display:flex;justify-content:space-between;align-items:center;margin-bottom:.9rem}
+.clk{font-size:.73rem;color:var(--gm)}
+.btn-adm{font-size:.73rem;padding:5px 14px;border:1px solid var(--bd2);border-radius:99px;background:#fff;color:var(--gk);cursor:pointer}
+.btn-adm:hover{background:var(--gr)}
+.is-admin .btn-adm{background:var(--gl);color:var(--gd);border-color:var(--g);font-weight:600}
+
+/* 공지 */
+.sec-lbl{font-size:.68rem;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--gm);margin-bottom:.5rem}
+.notice-wrap{margin-bottom:1.25rem}
+.n-item{display:flex;align-items:flex-start;gap:10px;background:#fff;border:.5px solid var(--bd);border-left:3px solid transparent;border-radius:var(--r8);padding:10px 13px;margin-bottom:6px;box-shadow:var(--sh)}
+.n-item:last-child{margin-bottom:0}
+.n-item.urgent{border-left-color:var(--r)}
+.n-item.info{border-left-color:var(--b)}
+.n-badge{font-size:.65rem;font-weight:700;padding:2px 8px;border-radius:99px;white-space:nowrap;flex-shrink:0;margin-top:1px}
+.nb-u{background:var(--rl);color:var(--r)}
+.nb-i{background:var(--bl);color:var(--b)}
+.n-txt{font-size:.82rem;line-height:1.55;flex:1;word-break:keep-all}
+.n-meta{display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex-shrink:0}
+.n-time{font-size:.68rem;color:var(--gm);white-space:nowrap}
+.n-del{font-size:.68rem;color:var(--gm);background:none;border:none;cursor:pointer;padding:0;line-height:1}
+.n-del:hover{color:var(--r)}
+.no-data{font-size:.82rem;color:var(--gm);padding:6px 0}
+
+/* 필터 */
+.filter-box{background:#fff;border:.5px solid var(--bd);border-radius:var(--r12);padding:1rem 1.25rem;margin-bottom:1.25rem;display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end;box-shadow:var(--sh)}
+.fg{display:flex;flex-direction:column;gap:4px}
+.fg label{font-size:.7rem;color:var(--gm)}
+.fg select{font-size:.82rem;padding:6px 10px;border:.5px solid var(--bd2);border-radius:var(--r8);background:var(--gr);color:var(--gk);cursor:pointer}
+.btn-rst{font-size:.78rem;padding:7px 14px;border:.5px solid var(--bd2);border-radius:var(--r8);background:transparent;color:var(--gm);cursor:pointer;margin-top:auto}
+.btn-rst:hover{background:var(--gr)}
+
+/* 반 탭 */
+.ctabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:1rem}
+.ctab{padding:5px 13px;font-size:.78rem;border-radius:99px;border:.5px solid var(--bd2);background:transparent;color:var(--gk);cursor:pointer}
+.ctab.on{background:var(--g);color:#fff;border-color:var(--g)}
+.ctab:hover:not(.on){background:var(--gr)}
+
+/* 타임라인 */
+.timeline{display:block}
+.trow{display:flex;min-height:0}
+.tcol{width:64px;flex-shrink:0;display:flex;flex-direction:column;align-items:center;padding-top:14px}
+.ttxt{font-size:.72rem;font-weight:700;color:var(--gm);white-space:nowrap}
+.tline{width:1px;background:var(--bd2);flex:1;min-height:10px;margin-top:4px}
+.ecol{flex:1;min-width:0;padding:0 0 14px 10px}
+.ecard{display:block;background:#fff;border:.5px solid var(--bd);border-radius:var(--r12);padding:12px 14px;margin-bottom:8px;box-shadow:var(--sh)}
+.ecard:last-child{margin-bottom:0}
+.ecard.cur{border:1.5px solid var(--g);background:var(--gl)}
+.ecard.don{opacity:.5}
+.etop{display:flex;align-items:center;gap:8px;margin-bottom:6px;flex-wrap:wrap}
+.ename{font-size:.95rem;font-weight:700}
+.ebadge{font-size:.65rem;font-weight:700;padding:2px 9px;border-radius:99px}
+.eb-c{background:var(--g);color:#fff}
+.eb-u{background:var(--al);color:var(--a)}
+.eb-d{background:var(--gr);color:var(--gm)}
+.emeta{display:flex;gap:14px;flex-wrap:wrap;margin-bottom:6px}
+.emi{font-size:.75rem;color:var(--gm)}
+.etags{display:flex;gap:5px;flex-wrap:wrap}
+.etag{font-size:.65rem;padding:2px 8px;border-radius:99px;background:var(--bl);color:var(--b)}
+.etag.hl{background:var(--g);color:#fff}
+.tl-empty{text-align:center;padding:3rem 1rem;font-size:.85rem;color:var(--gm)}
+
+/* 모달 */
+.ov{position:fixed;inset:0;background:rgba(0,0,0,.42);display:none;align-items:center;justify-content:center;z-index:300;padding:1rem}
+.ov.open{display:flex}
+.mbox{background:#fff;border-radius:var(--r16);padding:1.5rem;width:100%;max-width:460px;box-shadow:0 12px 40px rgba(0,0,0,.18);animation:pop .17s ease;max-height:90vh;overflow-y:auto}
+@keyframes pop{from{opacity:0;transform:scale(.95)}to{opacity:1;transform:scale(1)}}
+.mbox h2{font-size:1rem;font-weight:700;margin-bottom:1.1rem}
+.mb{display:block;width:100%;text-align:left;padding:10px 14px;border-radius:var(--r8);border:.5px solid var(--bd2);background:#fff;font-size:.85rem;cursor:pointer;margin-bottom:8px;font-family:inherit}
+.mb:hover{background:var(--gr)}
+.mb-g{background:var(--gl);color:var(--gd);border-color:var(--g)}
+.mb-b{background:var(--bl);color:var(--b);border-color:var(--b)}
+.mb-a{background:var(--al);color:var(--a);border-color:var(--a)}
+.mb-r{background:var(--rl);color:var(--r);border-color:var(--r)}
+.fr{margin-bottom:11px}
+.fr label{display:block;font-size:.7rem;color:var(--gm);margin-bottom:4px}
+.fr input,.fr select,.fr textarea{width:100%;font-size:.82rem;padding:7px 10px;border:.5px solid var(--bd2);border-radius:var(--r8);background:var(--gr);color:var(--gk);font-family:inherit}
+.fr input:focus,.fr select:focus,.fr textarea:focus{outline:2px solid var(--g);background:#fff}
+.fr textarea{height:80px;resize:vertical}
+.fgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.mf{display:flex;gap:8px;justify-content:flex-end;margin-top:1.1rem}
+.bp{background:var(--g);color:#fff;border:none;border-radius:var(--r8);padding:8px 20px;font-size:.82rem;font-weight:700;cursor:pointer;font-family:inherit}
+.bp:hover{background:var(--gd)}
+.bc{background:transparent;color:var(--gm);border:.5px solid var(--bd2);border-radius:var(--r8);padding:8px 14px;font-size:.82rem;cursor:pointer;font-family:inherit}
+.bd{background:var(--rl);color:var(--r);border:.5px solid var(--r);border-radius:var(--r8);padding:8px 14px;font-size:.82rem;cursor:pointer;font-family:inherit}
+
+/* 로그인 모달 */
+.lbox{background:#fff;border-radius:var(--r16);padding:2rem 1.75rem;width:100%;max-width:340px;box-shadow:0 12px 40px rgba(0,0,0,.2);animation:pop .17s ease;text-align:center}
+.lbox h2{font-size:1rem;font-weight:700;margin-bottom:.3rem}
+.lbox p{font-size:.78rem;color:var(--gm);margin-bottom:1.25rem;line-height:1.5}
+.iw{position:relative;margin-bottom:.5rem}
+.iw input{width:100%;padding:10px 40px 10px 14px;font-size:.88rem;border:1px solid var(--bd2);border-radius:var(--r8);background:var(--gr);color:var(--gk);font-family:inherit}
+.iw input:focus{outline:2px solid var(--g);background:#fff}
+.iw input.bad{border-color:var(--r);background:var(--rl)}
+.eye{position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;font-size:.85rem;color:var(--gm)}
+.lerr{font-size:.75rem;color:var(--r);min-height:1.1rem;margin-bottom:.6rem}
+.btn-login{width:100%;background:var(--g);color:#fff;border:none;border-radius:var(--r8);padding:10px;font-size:.9rem;font-weight:700;cursor:pointer;font-family:inherit;margin-bottom:.5rem}
+.btn-login:hover:not(:disabled){background:var(--gd)}
+.btn-login:disabled{opacity:.4;cursor:not-allowed}
+.btn-csm{font-size:.78rem;color:var(--gm);background:none;border:none;cursor:pointer;font-family:inherit}
+
+/* 토스트 */
+.toast{position:fixed;bottom:1.5rem;left:50%;transform:translateX(-50%);background:#222;color:#fff;padding:9px 20px;border-radius:99px;font-size:.8rem;opacity:0;pointer-events:none;white-space:nowrap;z-index:999;transition:opacity .2s}
+.toast.show{opacity:1}
+
+@media(max-width:480px){.hd h1{font-size:1rem}.tcol{width:52px}.fgrid{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+
+<!-- Firebase Auth SDK만 사용 (읽기는 REST로) -->
+<script type="module">
+import { initializeApp }   from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged }
+                           from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+
+const cfg = {
+  apiKey:            "AIzaSyAVSLJrQDD2fxlc2kkaVlGhVaxCpsltUz0",
+  authDomain:        "semyung-spor.firebaseapp.com",
+  databaseURL:       "https://semyung-spor-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId:         "semyung-spor",
+  storageBucket:     "semyung-spor.firebasestorage.app",
+  messagingSenderId: "266780919685",
+  appId:             "1:266780919685:web:f40b3e20b3a8ab30e726ec"
+};
+
+const app  = initializeApp(cfg);
+const auth = getAuth(app);
+
+// 인증 토큰을 window에 노출
+onAuthStateChanged(auth, async user => {
+  if (user) {
+    const token = await user.getIdToken();
+    window._authToken = token;
+    window._userEmail = user.email;
+  } else {
+    window._authToken = null;
+    window._userEmail = null;
+  }
+  window._authReady = true;
+  if (window.onAuthChange) window.onAuthChange(!!user);
+});
+
+window._fbAuth = {
+  login:  (email, pw) => signInWithEmailAndPassword(auth, email, pw),
+  logout: ()          => signOut(auth),
+  getToken: async ()  => {
+    const user = auth.currentUser;
+    if (!user) return null;
+    return await user.getIdToken(true); // 강제 갱신
+  }
+};
+</script>
+
+<div class="page">
+  <header class="hd">
+    <div>
+      <h1>2025 체육대회 일정표</h1>
+      <p class="sub">세명고등학교 · 운동장 및 체육관</p>
+    </div>
+    <div class="live-pill">
+      <div class="dot"></div>
+      <span id="liveLabel">연결 중...</span>
+    </div>
+  </header>
+
+  <div class="abar" id="abar">
+    <span class="clk" id="clk"></span>
+    <button class="btn-adm" onclick="clickAdmin()">⚙ 관리자 모드</button>
+  </div>
+
+  <p class="sec-lbl">📢 공지사항</p>
+  <div class="notice-wrap" id="noticeWrap">
+    <p class="no-data">불러오는 중...</p>
+  </div>
+
+  <div class="filter-box">
+    <div class="fg"><label>학년</label>
+      <select id="fGrade" onchange="onGrade()">
+        <option value="">전체</option>
+        <option value="1">1학년</option>
+        <option value="2">2학년</option>
+        <option value="3">3학년</option>
+      </select>
+    </div>
+    <div class="fg"><label>반</label>
+      <select id="fClass" onchange="renderTimeline()"><option value="">전체</option></select>
+    </div>
+    <div class="fg"><label>종목</label>
+      <select id="fSport" onchange="renderTimeline()"><option value="">전체</option></select>
+    </div>
+    <button class="btn-rst" onclick="resetF()">초기화</button>
+  </div>
+
+  <div class="ctabs" id="ctabs" style="display:none"></div>
+  <div class="timeline" id="timeline"><div class="tl-empty">일정을 불러오는 중...</div></div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<!-- 로그인 모달 -->
+<div class="ov" id="loginOv">
+  <div class="lbox">
+    <div style="font-size:2rem;margin-bottom:.5rem">🔐</div>
+    <h2>관리자 로그인</h2>
+    <p>Firebase에 등록된<br>관리자 계정으로 로그인하세요.</p>
+    <div class="iw"><input type="email" id="lEmail" placeholder="이메일" onkeydown="if(event.key==='Enter')document.getElementById('lPw').focus()"/></div>
+    <div class="iw">
+      <input type="password" id="lPw" placeholder="비밀번호" onkeydown="if(event.key==='Enter')doLogin()" oninput="clearLE()"/>
+      <button class="eye" onclick="toggleEye()">👁</button>
+    </div>
+    <div class="lerr" id="lErr"></div>
+    <button class="btn-login" id="lBtn" onclick="doLogin()">로그인</button><br>
+    <button class="btn-csm" onclick="closeLogin()">취소</button>
+  </div>
+</div>
+
+<!-- 관리자 모달 -->
+<div class="ov" id="adminOv" onclick="if(event.target===this)closeAdmin()">
+  <div class="mbox">
+    <h2 id="mTitle">관리자 메뉴</h2>
+
+    <div id="pMenu">
+      <button class="mb mb-g" onclick="sp('pNotice')">📢 공지사항 추가</button>
+      <button class="mb mb-b" onclick="sp('pEvent')">📅 경기 일정 추가</button>
+      <button class="mb mb-a" onclick="sp('pStatus')">🔄 경기 상태 변경</button>
+      <button class="mb mb-r" onclick="sp('pDelete')">🗑 경기 삭제</button>
+      <div class="mf"><button class="bd" onclick="doLogout()">로그아웃</button><button class="bc" onclick="closeAdmin()">닫기</button></div>
+    </div>
+
+    <div id="pNotice" style="display:none">
+      <div class="fr"><label>중요도</label>
+        <select id="nType"><option value="urgent">긴급 (빨간색)</option><option value="info">일반 (파란색)</option></select>
+      </div>
+      <div class="fr"><label>공지 내용</label><textarea id="nTxt" placeholder="공지 내용을 입력하세요..."></textarea></div>
+      <div class="mf"><button class="bc" onclick="sp('pMenu')">뒤로</button><button class="bp" onclick="addNotice()">등록</button></div>
+    </div>
+
+    <div id="pEvent" style="display:none">
+      <div class="fgrid">
+        <div class="fr"><label>시작 시간</label><input id="eTime" type="time" value="09:00"/></div>
+        <div class="fr"><label>소요 시간(분)</label><input id="eDur" type="number" value="40" min="5" max="180"/></div>
+        <div class="fr"><label>종목</label><input id="eSport" placeholder="예: 축구"/></div>
+        <div class="fr"><label>장소</label><input id="ePlace" placeholder="예: 운동장 A"/></div>
+      </div>
+      <div class="fr"><label>참가 반 (쉼표 구분, 예: 1-1, 2-3)</label><input id="eClasses" placeholder="1-1, 1-2, 2-3"/></div>
+      <div class="mf"><button class="bc" onclick="sp('pMenu')">뒤로</button><button class="bp" onclick="addEvent()">추가</button></div>
+    </div>
+
+    <div id="pStatus" style="display:none">
+      <div class="fr"><label>경기 선택</label><select id="sEid"></select></div>
+      <div class="fr"><label>변경할 상태</label>
+        <select id="sStat"><option value="upcoming">예정</option><option value="current">진행중</option><option value="done">완료</option></select>
+      </div>
+      <div class="mf"><button class="bc" onclick="sp('pMenu')">뒤로</button><button class="bp" onclick="chgStatus()">변경</button></div>
+    </div>
+
+    <div id="pDelete" style="display:none">
+      <div class="fr"><label>삭제할 경기</label><select id="dEid"></select></div>
+      <div class="mf"><button class="bc" onclick="sp('pMenu')">뒤로</button><button class="bd" onclick="delEvent()">삭제</button></div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ══════════════════════════════════════
+   설정
+══════════════════════════════════════ */
+const DB = "https://semyung-spor-default-rtdb.asia-southeast1.firebasedatabase.app";
+
+const ALL_CLS = ["1-1","1-2","1-3","1-4","2-1","2-2","2-3","2-4","3-1","3-2","3-3","3-4"];
+
+/* ══════════════════════════════════════
+   전역 상태
+══════════════════════════════════════ */
+let notices   = [];
+let events    = [];
+let activeTab = "";
+
+/* ══════════════════════════════════════
+   REST API — Firebase Realtime Database
+   읽기: GET .json (공개)
+   쓰기: POST/PUT/DELETE .json?auth=TOKEN
+══════════════════════════════════════ */
+async function dbGet(path) {
+  const res = await fetch(`${DB}/${path}.json`);
+  if (!res.ok) throw new Error("GET 실패: " + res.status);
+  return res.json(); // null 또는 {key: {...}, ...} 객체
+}
+
+async function dbPost(path, data) {
+  const token = await getToken();
+  const res = await fetch(`${DB}/${path}.json?auth=${token}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(data)
+  });
+  if (!res.ok) throw new Error(await res.text());
+  return res.json();
+}
+
+async function dbPatch(path, data) {
+  const token = await getToken();
+  const res = await fetch(`${DB}/${path}.json?auth=${token}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(data)
+  });
+  if (!res.ok) throw new Error(await res.text());
+}
+
+async function dbDelete(path) {
+  const token = await getToken();
+  const res = await fetch(`${DB}/${path}.json?auth=${token}`, { method: "DELETE" });
+  if (!res.ok) throw new Error(await res.text());
+}
+
+async function getToken() {
+  if (!window._fbAuth) throw new Error("Firebase Auth 미연결");
+  const t = await window._fbAuth.getToken();
+  if (!t) throw new Error("로그인이 필요합니다.");
+  return t;
+}
+
+/* Firebase 응답 객체 → 배열 변환 */
+function toArray(obj) {
+  if (!obj || typeof obj !== "object") return [];
+  return Object.entries(obj).map(([id, val]) => ({ id, ...val }));
+}
+
+/* ══════════════════════════════════════
+   데이터 로드 & 폴링
+══════════════════════════════════════ */
+async function loadAll() {
+  try {
+    const [nRaw, eRaw] = await Promise.all([dbGet("notices"), dbGet("events")]);
+
+    notices = toArray(nRaw).sort((a, b) => b.time.localeCompare(a.time));
+    events  = toArray(eRaw).sort((a, b) => a.time.localeCompare(b.time));
+
+    renderNotices();
+    renderSportFilter();
+    renderTimeline();
+    document.getElementById("liveLabel").textContent = "실시간 연결됨";
+  } catch(e) {
+    console.error("데이터 로드 실패:", e);
+    document.getElementById("liveLabel").textContent = "연결 오류";
+  }
+}
+
+// 첫 로드 후 10초마다 자동 갱신
+loadAll();
+setInterval(loadAll, 10000);
+
+/* ══════════════════════════════════════
+   Auth 콜백
+══════════════════════════════════════ */
+window.onAuthChange = function(isAdmin) {
+  const bar = document.getElementById("abar");
+  const btn = bar.querySelector(".btn-adm");
+  if (isAdmin) {
+    bar.classList.add("is-admin");
+    btn.textContent = "⚙ 관리자 메뉴";
+  } else {
+    bar.classList.remove("is-admin");
+    btn.textContent = "⚙ 관리자 모드";
+  }
+  renderNotices(); // 삭제 버튼 표시/숨김
+};
+
+/* ══════════════════════════════════════
+   렌더: 공지사항
+══════════════════════════════════════ */
+function renderNotices() {
+  const wrap = document.getElementById("noticeWrap");
+  if (!notices.length) {
+    wrap.innerHTML = '<p class="no-data">공지사항이 없습니다.</p>';
+    return;
+  }
+  const isAdmin = !!window._authToken;
+  let h = "";
+  for (const n of notices) {
+    const lbl   = n.type === "urgent" ? "긴급" : "공지";
+    const bc    = n.type === "urgent" ? "nb-u" : "nb-i";
+    const delBtn = isAdmin
+      ? `<button class="n-del" onclick="delNotice('${n.id}')">✕</button>`
+      : "";
+    h +=
+      `<div class="n-item ${n.type}">` +
+        `<span class="n-badge ${bc}">${lbl}</span>` +
+        `<span class="n-txt">${esc(n.text)}</span>` +
+        `<span class="n-meta"><span class="n-time">${n.time}</span>${delBtn}</span>` +
+      `</div>`;
+  }
+  wrap.innerHTML = h;
+}
+
+/* ══════════════════════════════════════
+   렌더: 종목 필터 옵션
+══════════════════════════════════════ */
+function renderSportFilter() {
+  const sports = [...new Set(events.map(e => e.sport))].sort();
+  const sel = document.getElementById("fSport");
+  const cur = sel.value;
+  sel.innerHTML = '<option value="">전체</option>' +
+    sports.map(s => `<option value="${s}"${s === cur ? " selected" : ""}>${s}</option>`).join("");
+}
+
+/* ══════════════════════════════════════
+   렌더: 타임라인
+══════════════════════════════════════ */
+function getFiltered() {
+  const grade = document.getElementById("fGrade").value;
+  const cls   = activeTab || document.getElementById("fClass").value;
+  const sport = document.getElementById("fSport").value;
+  return events.filter(e => {
+    if (sport && e.sport !== sport) return false;
+    if (cls)   return e.classes && e.classes.includes(cls);
+    if (grade) return e.classes && e.classes.some(c => c.startsWith(grade + "-"));
+    return true;
+  });
+}
+
+function renderTimeline() {
+  const myClass  = activeTab || document.getElementById("fClass").value;
+  const filtered = getFiltered();
+  const tl = document.getElementById("timeline");
+
+  if (!filtered.length) {
+    tl.innerHTML = '<div class="tl-empty">해당하는 경기 일정이 없습니다.</div>';
+    return;
+  }
+
+  // 시간대별 그룹
+  const grouped = {};
+  for (const e of filtered) {
+    (grouped[e.time] = grouped[e.time] || []).push(e);
+  }
+  const times = Object.keys(grouped).sort();
+
+  let html = "";
+  for (const t of times) {
+    let cards = "";
+    for (const e of grouped[t]) {
+      const lbl    = { current:"진행중", upcoming:"예정", done:"완료" }[e.status] ?? "예정";
+      const ebCls  = { current:"eb-c",   upcoming:"eb-u",  done:"eb-d" }[e.status] ?? "eb-u";
+      const ecCls  = { current:"cur",    done:"don" }[e.status] ?? "";
+      const cls = e.classes || [];
+      const tags   = cls.map(c =>
+        `<span class="etag${myClass && c === myClass ? " hl" : ""}">${esc(c)}</span>`
+      ).join("");
+
+      cards +=
+        `<div class="ecard ${ecCls}">` +
+          `<div class="etop"><span class="ename">${esc(e.sport)}</span><span class="ebadge ${ebCls}">${lbl}</span></div>` +
+          `<div class="emeta"><span class="emi">📍 ${esc(e.place || "")}</span><span class="emi">⏱ ${e.dur || 0}분</span></div>` +
+          `<div class="etags">${tags}</div>` +
+        `</div>`;
+    }
+
+    html +=
+      `<div class="trow">` +
+        `<div class="tcol"><span class="ttxt">${t}</span><div class="tline"></div></div>` +
+        `<div class="ecol">${cards}</div>` +
+      `</div>`;
+  }
+
+  tl.innerHTML = html;
+}
+
+/* ══════════════════════════════════════
+   필터 컨트롤
+══════════════════════════════════════ */
+function onGrade() {
+  const grade = document.getElementById("fGrade").value;
+  activeTab = "";
+  const fc = grade ? ALL_CLS.filter(c => c.startsWith(grade + "-")) : ALL_CLS;
+  document.getElementById("fClass").innerHTML =
+    '<option value="">전체</option>' + fc.map(c => `<option value="${c}">${c}반</option>`).join("");
+
+  const tabs = document.getElementById("ctabs");
+  if (grade) {
+    tabs.style.display = "flex";
+    tabs.innerHTML =
+      `<button class="ctab on" onclick="setTab('')">전체</button>` +
+      fc.map(c => `<button class="ctab" id="ct-${c}" onclick="setTab('${c}')">${c}반</button>`).join("");
+  } else {
+    tabs.style.display = "none";
+    tabs.innerHTML = "";
+  }
+  renderTimeline();
+}
+
+function setTab(cls) {
+  activeTab = cls;
+  document.querySelectorAll(".ctab").forEach(el => el.classList.remove("on"));
+  const t = cls ? document.getElementById("ct-" + cls) : document.querySelector(".ctab");
+  if (t) t.classList.add("on");
+  document.getElementById("fClass").value = cls;
+  renderTimeline();
+}
+
+function resetF() {
+  ["fGrade","fClass","fSport"].forEach(id => document.getElementById(id).value = "");
+  activeTab = "";
+  document.getElementById("ctabs").style.display = "none";
+  document.getElementById("ctabs").innerHTML = "";
+  renderTimeline();
+}
+
+/* ══════════════════════════════════════
+   로그인 / 로그아웃
+══════════════════════════════════════ */
+function clickAdmin() {
+  if (window._authToken) openAdmin();
+  else openLogin();
+}
+
+function openLogin() {
+  document.getElementById("lEmail").value = "";
+  document.getElementById("lPw").value = "";
+  document.getElementById("lErr").textContent = "";
+  document.getElementById("lBtn").disabled = false;
+  document.getElementById("loginOv").classList.add("open");
+  setTimeout(() => document.getElementById("lEmail").focus(), 80);
+}
+function closeLogin() { document.getElementById("loginOv").classList.remove("open"); }
+function clearLE() { document.getElementById("lErr").textContent = ""; document.getElementById("lPw").classList.remove("bad"); }
+function toggleEye() { const i = document.getElementById("lPw"); i.type = i.type === "password" ? "text" : "password"; }
+
+async function doLogin() {
+  const email = document.getElementById("lEmail").value.trim();
+  const pw    = document.getElementById("lPw").value;
+  if (!email || !pw) { document.getElementById("lErr").textContent = "이메일과 비밀번호를 입력해 주세요."; return; }
+
+  const btn = document.getElementById("lBtn");
+  btn.disabled = true; btn.textContent = "로그인 중...";
+
+  try {
+    await window._fbAuth.login(email, pw);
+    // onAuthStateChanged가 토큰을 세팅할 때까지 잠깐 대기
+    await new Promise(r => setTimeout(r, 600));
+    closeLogin();
+    openAdmin();
+    showToast("관리자로 로그인되었습니다.");
+  } catch(e) {
+    document.getElementById("lPw").classList.add("bad");
+    document.getElementById("lErr").textContent =
+      e.code === "auth/invalid-credential" || e.code === "auth/wrong-password"
+        ? "이메일 또는 비밀번호가 올바르지 않습니다."
+        : e.code === "auth/too-many-requests"
+        ? "시도 횟수 초과 — 잠시 후 다시 시도하세요."
+        : "로그인 실패: " + e.message;
+  } finally {
+    btn.disabled = false; btn.textContent = "로그인";
+  }
+}
+
+async function doLogout() {
+  await window._fbAuth?.logout();
+  closeAdmin();
+  showToast("로그아웃 되었습니다.");
+}
+
+/* ══════════════════════════════════════
+   관리자 모달
+══════════════════════════════════════ */
+function openAdmin() {
+  sp("pMenu"); fillSel();
+  document.getElementById("adminOv").classList.add("open");
+}
+function closeAdmin() { document.getElementById("adminOv").classList.remove("open"); }
+
+function sp(id) {
+  ["pMenu","pNotice","pEvent","pStatus","pDelete"].forEach(p =>
+    document.getElementById(p).style.display = p === id ? "" : "none"
+  );
+  const T = { pMenu:"관리자 메뉴", pNotice:"공지사항 추가", pEvent:"경기 일정 추가", pStatus:"경기 상태 변경", pDelete:"경기 삭제" };
+  document.getElementById("mTitle").textContent = T[id] ?? "";
+}
+
+function fillSel() {
+  const opts = events.map(e =>
+    `<option value="${e.id}">${e.time} ${esc(e.sport)} (${(e.classes||[]).join(", ")})</option>`
+  ).join("");
+  const empty = '<option value="">경기 없음</option>';
+  document.getElementById("sEid").innerHTML = opts || empty;
+  document.getElementById("dEid").innerHTML = opts || empty;
+}
+
+/* ── 공지 추가 ── */
+async function addNotice() {
+  const type = document.getElementById("nType").value;
+  const text = document.getElementById("nTxt").value.trim();
+  if (!text) { showToast("내용을 입력해 주세요."); return; }
+  const now  = new Date();
+  const time = pad(now.getHours()) + ":" + pad(now.getMinutes());
+  try {
+    await dbPost("notices", { type, text, time });
+    document.getElementById("nTxt").value = "";
+    closeAdmin();
+    await loadAll();
+    showToast("공지사항이 등록되었습니다.");
+  } catch(e) { showToast("❌ " + e.message); }
+}
+
+/* ── 공지 삭제 ── */
+async function delNotice(id) {
+  if (!confirm("이 공지사항을 삭제하시겠습니까?")) return;
+  try {
+    await dbDelete("notices/" + id);
+    await loadAll();
+    showToast("공지사항이 삭제되었습니다.");
+  } catch(e) { showToast("❌ " + e.message); }
+}
+
+/* ── 경기 추가 ── */
+async function addEvent() {
+  const time    = document.getElementById("eTime").value;
+  const sport   = document.getElementById("eSport").value.trim();
+  const place   = document.getElementById("ePlace").value.trim();
+  const dur     = parseInt(document.getElementById("eDur").value) || 40;
+  const classes = document.getElementById("eClasses").value.split(",").map(c => c.trim()).filter(Boolean);
+  if (!time || !sport || !classes.length) { showToast("시간, 종목, 참가 반을 모두 입력해 주세요."); return; }
+  try {
+    await dbPost("events", { time, sport, place, dur, classes, status: "upcoming" });
+    ["eSport","ePlace","eClasses"].forEach(i => document.getElementById(i).value = "");
+    closeAdmin();
+    await loadAll();
+    showToast("경기 일정이 추가되었습니다.");
+  } catch(e) { showToast("❌ " + e.message); }
+}
+
+/* ── 상태 변경 ── */
+async function chgStatus() {
+  const id   = document.getElementById("sEid").value;
+  const stat = document.getElementById("sStat").value;
+  if (!id) { showToast("경기를 선택해 주세요."); return; }
+  try {
+    await dbPatch("events/" + id, { status: stat });
+    closeAdmin();
+    await loadAll();
+    showToast("경기 상태가 변경되었습니다.");
+  } catch(e) { showToast("❌ " + e.message); }
+}
+
+/* ── 경기 삭제 ── */
+async function delEvent() {
+  const id = document.getElementById("dEid").value;
+  if (!id || !confirm("이 경기를 삭제하시겠습니까?")) return;
+  try {
+    await dbDelete("events/" + id);
+    closeAdmin();
+    await loadAll();
+    showToast("경기가 삭제되었습니다.");
+  } catch(e) { showToast("❌ " + e.message); }
+}
+
+/* ══════════════════════════════════════
+   유틸
+══════════════════════════════════════ */
+function esc(s) {
+  return String(s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+}
+function pad(n) { return String(n).padStart(2, "0"); }
+
+let _tt;
+function showToast(msg) {
+  const t = document.getElementById("toast");
+  t.textContent = msg; t.classList.add("show");
+  clearTimeout(_tt); _tt = setTimeout(() => t.classList.remove("show"), 2800);
+}
+
+function updateClock() {
+  const n = new Date();
+  document.getElementById("clk").textContent = `현재 시각: ${pad(n.getHours())}:${pad(n.getMinutes())}`;
+}
+updateClock();
+setInterval(updateClock, 30000);
+</script>
+</body>
+</html>
