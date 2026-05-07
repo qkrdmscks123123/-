@@ -340,8 +340,8 @@ const S_ORDER = { current:0, soon:1, upcoming:2, done:3 };
 // 종목별 이모지
 const SPORT_EMOJI = {
   "축구":"⚽","농구":"🏀","배구":"🏐","야구":"⚾","탁구":"🏓",
-  "배드민턴":"🏸","줄다리기":"🪢","이어달리기":"🏃","피구":"🎯",
-  "족구":"🦶","테니스":"🎾","수영":"🏊"
+  "배드민턴":"🏸","단체줄넘기":"👯","계주":"🏃","씨름(남)":"🤼‍♂️",
+  "씨름(여)":"🤼‍♀️","풋살 (여)":"⚽️","피구":"🎯"
 };
 function sportEmoji(name) {
   for (const [k,v] of Object.entries(SPORT_EMOJI)) if (name.includes(k)) return v;
